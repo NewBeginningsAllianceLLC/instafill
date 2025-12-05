@@ -11,11 +11,23 @@ export class PDFTemplateService {
 
   async loadTemplate(filePath: string): Promise<PDFTemplate> {
     try {
-      const pdfBytes = await window.electronAPI.readFile(filePath);
-      const pdfDoc = await PDFDocument.load(pdfBytes, { 
-        ignoreEncryption: true,
-        updateMetadata: false 
-      });
+      let pdfBytes = await window.electronAPI.readFile(filePath);
+      
+      // Try to load with various options
+      let pdfDoc;
+      try {
+        pdfDoc = await PDFDocument.load(pdfBytes, { 
+          ignoreEncryption: true,
+          updateMetadata: false 
+        });
+      } catch (firstError) {
+        // Try without options
+        try {
+          pdfDoc = await PDFDocument.load(pdfBytes);
+        } catch (secondError) {
+          throw new Error(`Cannot parse this PDF. It may be corrupted, password-protected, or in an unsupported format. Try opening it in Adobe Reader and saving a new copy.`);
+        }
+      }
       
       const form = pdfDoc.getForm();
       const fields = form.getFields();
