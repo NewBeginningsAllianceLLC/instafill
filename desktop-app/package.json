@@ -75,7 +75,9 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.44",
     "@google/generative-ai": "^0.24.1",
+    "ai": "^5.0.107",
     "electron-store": "^11.0.2",
     "keytar": "^7.9.0",
     "papaparse": "^5.5.3",
