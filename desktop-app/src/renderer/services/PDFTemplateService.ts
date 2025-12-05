@@ -12,7 +12,10 @@ export class PDFTemplateService {
   async loadTemplate(filePath: string): Promise<PDFTemplate> {
     try {
       const pdfBytes = await window.electronAPI.readFile(filePath);
-      const pdfDoc = await PDFDocument.load(pdfBytes);
+      const pdfDoc = await PDFDocument.load(pdfBytes, { 
+        ignoreEncryption: true,
+        updateMetadata: false 
+      });
       
       const form = pdfDoc.getForm();
       const fields = form.getFields();

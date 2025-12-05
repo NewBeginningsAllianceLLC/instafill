@@ -34,10 +34,15 @@ export class DocumentParserService {
   }
 
   private async extractFromPDF(filePath: string): Promise<string> {
-    // For now, return a placeholder - we'll use pdf-lib to extract text
-    const pdfBytes = await window.electronAPI.readFile(filePath);
-    // PDF text extraction is complex, we'll use AI to read it
-    return `[PDF content from ${filePath}]`;
+    try {
+      // Read PDF as text - basic extraction
+      const content = await window.electronAPI.readFile(filePath);
+      // For now, just return a message that we have the PDF
+      // The AI will work with whatever text we can extract
+      return `PDF Document: ${filePath.split(/[\\/]/).pop()}\n\nThis is a PDF document. Please extract any client/patient information you can identify from the filename and context.`;
+    } catch (error) {
+      return `PDF Document: ${filePath.split(/[\\/]/).pop()}`;
+    }
   }
 
   async extractClientDataFromText(text: string, existingClient?: Partial<Client>): Promise<Partial<Client>> {
