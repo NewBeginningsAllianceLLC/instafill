@@ -262,29 +262,29 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 animate-gradient">
+    <div className="flex flex-col h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500 shadow-2xl">
-        <div className="max-w-6xl mx-auto px-8 py-6">
+      <div className="bg-slate-950/50 backdrop-blur-xl border-b border-slate-700/50">
+        <div className="max-w-7xl mx-auto px-10 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-5xl font-black text-white drop-shadow-lg transform hover:scale-105 transition-transform">
-                🎨 PDF Auto Filler AI ✨
+              <h1 className="text-6xl font-light text-white tracking-tight">
+                PDF Auto Filler
               </h1>
-              <p className="text-xl text-white/90 mt-2 font-semibold">Your super-smart form filling buddy!</p>
+              <p className="text-2xl text-slate-400 mt-3 font-light">Intelligent form automation</p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-5">
               <button
                 onClick={() => handleFileUpload('client')}
-                className="px-8 py-4 bg-yellow-400 hover:bg-yellow-300 text-gray-900 rounded-2xl font-black text-lg transition-all transform hover:scale-110 hover:rotate-2 shadow-xl flex items-center gap-3"
+                className="px-10 py-5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-2xl font-medium text-xl transition-all backdrop-blur-sm flex items-center gap-4"
               >
-                <span className="text-3xl">📊</span> Upload Clients
+                <span className="text-3xl">📊</span> Upload Client Data
               </button>
               <button
                 onClick={() => handleFileUpload('pdf')}
-                className="px-8 py-4 bg-green-400 hover:bg-green-300 text-gray-900 rounded-2xl font-black text-lg transition-all transform hover:scale-110 hover:-rotate-2 shadow-xl flex items-center gap-3"
+                className="px-10 py-5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-2xl font-medium text-xl transition-all backdrop-blur-sm flex items-center gap-4"
               >
-                <span className="text-3xl">📄</span> Upload PDF
+                <span className="text-3xl">📄</span> Upload PDF Form
               </button>
             </div>
           </div>
@@ -293,28 +293,28 @@ export function ChatInterface() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-8 py-8 space-y-6">
+        <div className="max-w-6xl mx-auto px-10 py-10 space-y-8">
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-3xl px-8 py-6 transform transition-all hover:scale-105 ${
+                className={`max-w-[80%] rounded-3xl px-10 py-8 transition-all ${
                   message.role === 'user'
-                    ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white shadow-2xl'
-                    : 'bg-white shadow-2xl border-4 border-purple-200'
+                    ? 'bg-blue-600/20 backdrop-blur-xl border border-blue-500/30 text-blue-100'
+                    : 'bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 text-slate-200'
                 }`}
               >
-                <div className="flex items-start gap-4">
-                  <span className="text-5xl">
-                    {message.role === 'user' ? '😎' : '🤖'}
+                <div className="flex items-start gap-5">
+                  <span className="text-4xl opacity-80">
+                    {message.role === 'user' ? '👤' : '🤖'}
                   </span>
                   <div className="flex-1">
-                    <p className="whitespace-pre-wrap leading-relaxed text-xl font-medium">{message.content}</p>
+                    <p className="whitespace-pre-wrap leading-relaxed text-2xl font-light">{message.content}</p>
                     <p
-                      className={`text-sm mt-3 font-bold ${
-                        message.role === 'user' ? 'text-white/80' : 'text-purple-400'
+                      className={`text-base mt-4 font-light ${
+                        message.role === 'user' ? 'text-blue-300/60' : 'text-slate-500'
                       }`}
                     >
                       {message.timestamp.toLocaleTimeString()}
@@ -326,13 +326,13 @@ export function ChatInterface() {
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-white shadow-2xl border-4 border-purple-200 rounded-3xl px-8 py-6">
-                <div className="flex items-center gap-4">
-                  <span className="text-5xl animate-bounce">🤖</span>
-                  <div className="flex gap-2">
-                    <div className="w-4 h-4 bg-purple-500 rounded-full animate-bounce"></div>
-                    <div className="w-4 h-4 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-4 h-4 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl px-10 py-8">
+                <div className="flex items-center gap-5">
+                  <span className="text-4xl opacity-80">🤖</span>
+                  <div className="flex gap-3">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
                   </div>
                 </div>
               </div>
@@ -343,28 +343,28 @@ export function ChatInterface() {
       </div>
 
       {/* Input */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-blue-500 shadow-2xl">
-        <div className="max-w-5xl mx-auto px-8 py-6">
-          <div className="flex gap-4">
+      <div className="bg-slate-950/50 backdrop-blur-xl border-t border-slate-700/50">
+        <div className="max-w-6xl mx-auto px-10 py-8">
+          <div className="flex gap-5">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type your message here... 💬"
-              className="flex-1 px-8 py-6 border-4 border-white rounded-3xl focus:border-yellow-300 focus:outline-none text-2xl font-bold shadow-xl"
+              placeholder="Type your message..."
+              className="flex-1 px-8 py-6 bg-slate-800/50 border border-slate-700/50 rounded-2xl focus:border-blue-500/50 focus:outline-none text-2xl font-light text-white placeholder-slate-500 backdrop-blur-sm transition-all"
               disabled={loading}
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || loading}
-              className="px-12 py-6 bg-yellow-400 hover:bg-yellow-300 text-gray-900 rounded-3xl font-black text-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-110 hover:rotate-3 shadow-2xl"
+              className="px-12 py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-medium text-2xl disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
-              🚀 SEND
+              Send
             </button>
           </div>
-          <p className="text-lg text-white font-bold mt-4 text-center drop-shadow-lg">
-            💡 Try: "upload client data" • "upload pdf" • "fill form" • "list clients"
+          <p className="text-lg text-slate-500 mt-5 text-center font-light">
+            Try: "upload client data" • "upload pdf" • "fill form" • "list clients"
           </p>
         </div>
       </div>
