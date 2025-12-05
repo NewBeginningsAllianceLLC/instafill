@@ -11,22 +11,43 @@ export class PDFTemplateService {
 
   async loadTemplate(filePath: string): Promise<PDFTemplate> {
     try {
-      let pdfBytes = await window.electronAPI.readFile(filePath);
+      const fileContent = await window.electronAPI.readFile(filePath);
+      
+      // Convert to Uint8Array if it's a string
+      let pdfBytes: Uint8Array;
+      if (typeof fileContent === 'string') {
+        // If it's base64 or text, convert it
+        const binaryString = atob(fileContent.includes('base64,') ? fileContent.split('base64,')[1] : fileContent);
+        pdfBytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          pdfBytes[i] = binaryString.charCodeAt(i);
+        }
+      } else {
+        pdfBytes = new Uint8Array(fileContent);
+      }
       
       // Try to load with various options
       let pdfDoc;
-      try {
-        pdfDoc = await PDFDocument.load(pdfBytes, { 
-          ignoreEncryption: true,
-          updateMetadata: false 
-        });
-      } catch (firstError) {
-        // Try without options
+      const loadOptions = [
+        { ignoreEncryption: true, updateMetadata: false, throwOnInvalidObject: false },
+        { ignoreEncryption: true, throwOnInvalidObject: false },
+        { throwOnInvalidObject: false },
+        {},
+      ];
+      
+      let lastError;
+      for (const options of loadOptions) {
         try {
-          pdfDoc = await PDFDocument.load(pdfBytes);
-        } catch (secondError) {
-          throw new Error(`Cannot parse this PDF. It may be corrupted, password-protected, or in an unsupported format. Try opening it in Adobe Reader and saving a new copy.`);
+          pdfDoc = await PDFDocument.load(pdfBytes, options);
+          break;
+        } catch (error) {
+          lastError = error;
+          continue;
         }
+      }
+      
+      if (!pdfDoc) {
+        throw new Error(`Cannot parse this PDF. Please try a different PDF file or create a simple fillable PDF form.`);
       }
       
       const form = pdfDoc.getForm();

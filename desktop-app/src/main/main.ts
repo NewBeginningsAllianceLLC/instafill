@@ -76,8 +76,18 @@ ipcMain.handle('select-directory', async () => {
 
 ipcMain.handle('read-file', async (event, filePath: string) => {
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
-    return content;
+    // Check file extension to determine how to read
+    const ext = filePath.split('.').pop()?.toLowerCase();
+    
+    if (ext === 'pdf' || ext === 'xlsx' || ext === 'xls' || ext === 'docx' || ext === 'doc') {
+      // Read as buffer for binary files
+      const buffer = await fs.readFile(filePath);
+      return Array.from(buffer);
+    } else {
+      // Read as text for text files
+      const content = await fs.readFile(filePath, 'utf-8');
+      return content;
+    }
   } catch (error: any) {
     throw new Error(`Failed to read file: ${error.message}`);
   }
