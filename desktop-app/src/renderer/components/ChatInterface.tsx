@@ -3,6 +3,8 @@ import { geminiService } from '../services/GeminiService';
 import { clientDataService } from '../services/ClientDataService';
 import { pdfTemplateService } from '../services/PDFTemplateService';
 import { formFillService } from '../services/FormFillService';
+import { documentParserService } from '../services/DocumentParserService';
+import { Client } from '@shared/schemas';
 
 interface Message {
   id: string;
@@ -16,13 +18,15 @@ export function ChatInterface() {
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'm your PDF Auto-Filler assistant. I can help you fill out PDF forms automatically. What would you like to do?\n\n• Upload client data (JSON, CSV, or Excel)\n• Upload a PDF form to fill\n• Fill a form with client data\n• Ask me anything about the process!",
+      content: "Hi! I'm your PDF Auto-Filler assistant. I can help you build client profiles from documents and fill PDF forms automatically.\n\n📄 Upload Documents (PDF, Word, Text)\n• I'll extract client information using AI\n• Upload multiple files to build a complete profile\n• Say 'save client' when done\n\n📋 Fill Forms\n• Upload a PDF form template\n• Say 'fill form' to auto-fill with client data\n\nTry: 'upload document' or 'upload pdf form'",
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [buildingClient, setBuildingClient] = useState<Partial<Client> | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,7 +74,7 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, newMessage]);
   };
 
-  const handleFileUpload = async (type: 'client' | 'pdf') => {
+  const handleFileUpload = async (type: 'client' | 'pdf' | 'document') => {
     try {
       if (type === 'client') {
         const filePath = await window.electronAPI.selectFile({
@@ -92,6 +96,56 @@ export function ChatInterface() {
             .slice(0, 5)
             .map((c) => `• ${c.firstName} ${c.lastName}`)
             .join('\n')}${clients.length > 5 ? `\n• ...and ${clients.length - 5} more` : ''}\n\nNow you can upload a PDF form to fill, or ask me to fill a form for a specific client!`
+        );
+      } else if (type === 'document') {
+        const filePath = await window.electronAPI.selectFile({
+          filters: [
+            { name: 'Documents', extensions: ['pdf', 'docx', 'doc', 'txt'] },
+            { name: 'All Files', extensions: ['*'] },
+          ],
+        });
+
+        if (!filePath) return;
+
+        const fileName = filePath.split(/[\\/]/).pop();
+        addMessage('user', `Uploading document: ${fileName}`);
+        setLoading(true);
+
+        // Extract text from document
+        const text = await documentParserService.extractTextFromFile(filePath);
+        
+        // Extract client data using AI
+        const extractedData = await documentParserService.extractClientDataFromText(
+          text,
+          buildingClient || undefined
+        );
+
+        setBuildingClient(extractedData);
+        setUploadedFiles([...uploadedFiles, fileName!]);
+
+        const dataPreview = `📋 Client Profile Updated:\n\n${
+          extractedData.firstName || extractedData.lastName
+            ? `Name: ${extractedData.firstName || ''} ${extractedData.lastName || ''}\n`
+            : ''
+        }${extractedData.dateOfBirth ? `DOB: ${extractedData.dateOfBirth}\n` : ''}${
+          extractedData.email ? `Email: ${extractedData.email}\n` : ''
+        }${extractedData.phone ? `Phone: ${extractedData.phone}\n` : ''}${
+          extractedData.address?.street ? `Address: ${extractedData.address.street}\n` : ''
+        }${
+          extractedData.address?.city
+            ? `${extractedData.address.city}, ${extractedData.address.state || ''} ${extractedData.address.zipCode || ''}\n`
+            : ''
+        }${
+          extractedData.customFields && Object.keys(extractedData.customFields).length > 0
+            ? `\nAdditional Info:\n${Object.entries(extractedData.customFields)
+                .map(([k, v]) => `• ${k}: ${v}`)
+                .join('\n')}`
+            : ''
+        }`;
+
+        addMessage(
+          'assistant',
+          `${dataPreview}\n\n📁 Files processed: ${uploadedFiles.length + 1}\n\nYou can:\n• Upload more documents to add information\n• Say "save client" to save this profile\n• Upload a PDF form to fill with this data`
         );
       } else {
         const filePath = await window.electronAPI.selectFile({
@@ -125,8 +179,44 @@ export function ChatInterface() {
   const processCommand = async (userInput: string) => {
     const input = userInput.toLowerCase();
 
+    // Check for save client command
+    if (input.includes('save client') || input.includes('save profile')) {
+      if (!buildingClient || !buildingClient.firstName || !buildingClient.lastName) {
+        addMessage('assistant', "I don't have enough client information yet. Please upload documents with client details first!");
+        return;
+      }
+
+      const client: Client = {
+        id: `client_${Date.now()}`,
+        firstName: buildingClient.firstName!,
+        lastName: buildingClient.lastName!,
+        dateOfBirth: buildingClient.dateOfBirth,
+        email: buildingClient.email,
+        phone: buildingClient.phone,
+        address: buildingClient.address,
+        customFields: buildingClient.customFields || {},
+        metadata: {
+          source: 'documents',
+          lastUpdated: new Date(),
+        },
+      };
+
+      clientDataService.addClient(client);
+      addMessage(
+        'assistant',
+        `✅ Client profile saved!\n\n${client.firstName} ${client.lastName} has been added to your client list.\n\nYou can now upload a PDF form to fill with this data, or start building a new client profile.`
+      );
+      setBuildingClient(null);
+      setUploadedFiles([]);
+      return;
+    }
+
     // Check for upload commands
-    if (input.includes('upload') || input.includes('import') || input.includes('load')) {
+    if (input.includes('upload') || input.includes('import') || input.includes('load') || input.includes('add')) {
+      if (input.includes('document') || input.includes('file') || input.includes('word') || input.includes('doc')) {
+        await handleFileUpload('document');
+        return;
+      }
       if (input.includes('client') || input.includes('data') || input.includes('csv') || input.includes('json') || input.includes('excel')) {
         await handleFileUpload('client');
         return;
@@ -135,15 +225,37 @@ export function ChatInterface() {
         await handleFileUpload('pdf');
         return;
       }
+      // Default to document upload
+      await handleFileUpload('document');
+      return;
     }
 
     // Check for fill commands
     if (input.includes('fill')) {
-      const clients = clientDataService.getAllClients();
+      let clients = clientDataService.getAllClients();
       const templates = pdfTemplateService.getAllTemplates();
 
+      // Check if we have a building client to use
+      if (buildingClient && buildingClient.firstName && buildingClient.lastName) {
+        const tempClient: Client = {
+          id: 'temp_client',
+          firstName: buildingClient.firstName,
+          lastName: buildingClient.lastName,
+          dateOfBirth: buildingClient.dateOfBirth,
+          email: buildingClient.email,
+          phone: buildingClient.phone,
+          address: buildingClient.address,
+          customFields: buildingClient.customFields || {},
+          metadata: {
+            source: 'documents',
+            lastUpdated: new Date(),
+          },
+        };
+        clients = [tempClient, ...clients];
+      }
+
       if (clients.length === 0) {
-        addMessage('assistant', "I don't have any client data yet. Please upload a client data file first!");
+        addMessage('assistant', "I don't have any client data yet. Please upload documents or a client data file first!");
         return;
       }
 
@@ -262,29 +374,31 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="flex flex-col h-full bg-[#1e1e1e]">
       {/* Header */}
-      <div className="bg-slate-950/50 backdrop-blur-xl border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-10 py-8">
+      <div className="bg-[#1e1e1e] border-b border-[#2d2d2d]">
+        <div className="max-w-5xl mx-auto px-8 py-5">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-6xl font-light text-white tracking-tight">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <span className="text-xl">📄</span>
+              </div>
+              <h1 className="text-2xl font-normal text-[#e3e3e3]">
                 PDF Auto Filler
               </h1>
-              <p className="text-2xl text-slate-400 mt-3 font-light">Intelligent form automation</p>
             </div>
-            <div className="flex gap-5">
+            <div className="flex gap-3">
               <button
-                onClick={() => handleFileUpload('client')}
-                className="px-10 py-5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-2xl font-medium text-xl transition-all backdrop-blur-sm flex items-center gap-4"
+                onClick={() => handleFileUpload('document')}
+                className="px-6 py-2.5 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#e3e3e3] rounded-full font-normal text-sm transition-all flex items-center gap-2"
               >
-                <span className="text-3xl">📊</span> Upload Client Data
+                <span className="text-lg">📄</span> Upload Documents
               </button>
               <button
                 onClick={() => handleFileUpload('pdf')}
-                className="px-10 py-5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 rounded-2xl font-medium text-xl transition-all backdrop-blur-sm flex items-center gap-4"
+                className="px-6 py-2.5 bg-[#2d2d2d] hover:bg-[#3d3d3d] text-[#e3e3e3] rounded-full font-normal text-sm transition-all flex items-center gap-2"
               >
-                <span className="text-3xl">📄</span> Upload PDF Form
+                <span className="text-lg">📋</span> Upload Form
               </button>
             </div>
           </div>
@@ -293,47 +407,41 @@ export function ChatInterface() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-10 py-10 space-y-8">
+        <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex gap-6 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
             >
-              <div
-                className={`max-w-[80%] rounded-3xl px-10 py-8 transition-all ${
-                  message.role === 'user'
-                    ? 'bg-blue-600/20 backdrop-blur-xl border border-blue-500/30 text-blue-100'
-                    : 'bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 text-slate-200'
-                }`}
-              >
-                <div className="flex items-start gap-5">
-                  <span className="text-4xl opacity-80">
-                    {message.role === 'user' ? '👤' : '🤖'}
-                  </span>
-                  <div className="flex-1">
-                    <p className="whitespace-pre-wrap leading-relaxed text-2xl font-light">{message.content}</p>
-                    <p
-                      className={`text-base mt-4 font-light ${
-                        message.role === 'user' ? 'text-blue-300/60' : 'text-slate-500'
-                      }`}
-                    >
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
-                  </div>
-                </div>
+              <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
+                message.role === 'user' 
+                  ? 'bg-[#8ab4f8]' 
+                  : 'bg-gradient-to-br from-blue-500 to-purple-600'
+              }`}>
+                <span className="text-lg">
+                  {message.role === 'user' ? '👤' : '🤖'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[#e3e3e3] text-lg leading-relaxed whitespace-pre-wrap font-normal">
+                  {message.content}
+                </p>
+                <p className="text-[#9aa0a6] text-xs mt-3">
+                  {message.timestamp.toLocaleTimeString()}
+                </p>
               </div>
             </div>
           ))}
           {loading && (
-            <div className="flex justify-start">
-              <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl px-10 py-8">
-                <div className="flex items-center gap-5">
-                  <span className="text-4xl opacity-80">🤖</span>
-                  <div className="flex gap-3">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
-                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-                  </div>
+            <div className="flex gap-6">
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <span className="text-lg">🤖</span>
+              </div>
+              <div className="flex-1">
+                <div className="flex gap-2 items-center">
+                  <div className="w-2 h-2 bg-[#8ab4f8] rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-[#8ab4f8] rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-[#8ab4f8] rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
                 </div>
               </div>
             </div>
@@ -343,28 +451,30 @@ export function ChatInterface() {
       </div>
 
       {/* Input */}
-      <div className="bg-slate-950/50 backdrop-blur-xl border-t border-slate-700/50">
-        <div className="max-w-6xl mx-auto px-10 py-8">
-          <div className="flex gap-5">
+      <div className="bg-[#1e1e1e] border-t border-[#2d2d2d]">
+        <div className="max-w-4xl mx-auto px-6 py-6">
+          <div className="bg-[#2d2d2d] rounded-3xl p-2 flex items-end gap-3">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type your message..."
-              className="flex-1 px-8 py-6 bg-slate-800/50 border border-slate-700/50 rounded-2xl focus:border-blue-500/50 focus:outline-none text-2xl font-light text-white placeholder-slate-500 backdrop-blur-sm transition-all"
+              placeholder="Message PDF Auto Filler..."
+              className="flex-1 px-5 py-4 bg-transparent text-[#e3e3e3] text-base placeholder-[#9aa0a6] focus:outline-none resize-none"
               disabled={loading}
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || loading}
-              className="px-12 py-6 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-medium text-2xl disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="flex-shrink-0 w-10 h-10 bg-[#8ab4f8] hover:bg-[#aecbfa] disabled:bg-[#3d3d3d] disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-all"
             >
-              Send
+              <svg className="w-5 h-5 text-[#1e1e1e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+              </svg>
             </button>
           </div>
-          <p className="text-lg text-slate-500 mt-5 text-center font-light">
-            Try: "upload client data" • "upload pdf" • "fill form" • "list clients"
+          <p className="text-[#9aa0a6] text-xs mt-4 text-center">
+            Try: "upload document" • "upload pdf form" • "save client" • "fill form"
           </p>
         </div>
       </div>
