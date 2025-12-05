@@ -1,4 +1,6 @@
 import { ClientImport } from './components/ClientImport';
+import { TemplateUpload } from './components/TemplateUpload';
+import { FormFiller } from './components/FormFiller';
 
 function App() {
   return (
@@ -13,7 +15,11 @@ function App() {
           </p>
         </div>
         
-        <ClientImport />
+        <div className="bg-white rounded-lg shadow-lg">
+          <ClientImport />
+          <TemplateUpload />
+          <FormFiller />
+        </div>
       </div>
     </div>
   );
