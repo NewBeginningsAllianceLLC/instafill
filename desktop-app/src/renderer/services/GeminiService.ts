@@ -8,10 +8,20 @@ export class GeminiService {
 
   async initialize(apiKey?: string): Promise<void> {
     try {
-      // Try to get API key from parameter, secure storage, or env
-      const key = apiKey || 
-                  await window.electronAPI.getSecureValue('gemini-api-key') ||
-                  import.meta.env.VITE_GEMINI_API_KEY;
+      // Try to get API key from parameter, secure storage, or hardcoded
+      let key = apiKey;
+      
+      if (!key) {
+        try {
+          key = await window.electronAPI.getSecureValue('gemini-api-key');
+        } catch (e) {
+          // Ignore error
+        }
+      }
+      
+      if (!key) {
+        key = 'AIzaSyCXuvPHjMPa9GmMKp45xEfb5ARLfRp08jI';
+      }
 
       if (!key) {
         throw new Error('No API key provided');
