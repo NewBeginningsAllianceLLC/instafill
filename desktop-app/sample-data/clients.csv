@@ -1,0 +1,4 @@
+id,firstName,lastName,dateOfBirth,email,phone,street,city,state,zipCode,country
+client_001,John,Doe,1985-06-15,john.doe@example.com,5551234567,123 Main Street,Springfield,IL,62701,USA
+client_002,Jane,Smith,1990-03-22,jane.smith@example.com,5559876543,456 Oak Avenue,Portland,OR,97201,USA
+client_003,Michael,Johnson,1978-11-08,michael.j@example.com,5555551234,789 Pine Road,Austin,TX,73301,USA

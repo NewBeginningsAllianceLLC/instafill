@@ -1,0 +1,41 @@
+[
+  {
+    "id": "client_001",
+    "firstName": "John",
+    "lastName": "Doe",
+    "dateOfBirth": "1985-06-15",
+    "email": "john.doe@example.com",
+    "phone": "5551234567",
+    "street": "123 Main Street",
+    "city": "Springfield",
+    "state": "IL",
+    "zipCode": "62701",
+    "country": "USA"
+  },
+  {
+    "id": "client_002",
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "dateOfBirth": "1990-03-22",
+    "email": "jane.smith@example.com",
+    "phone": "5559876543",
+    "street": "456 Oak Avenue",
+    "city": "Portland",
+    "state": "OR",
+    "zipCode": "97201",
+    "country": "USA"
+  },
+  {
+    "id": "client_003",
+    "firstName": "Michael",
+    "lastName": "Johnson",
+    "dateOfBirth": "1978-11-08",
+    "email": "michael.j@example.com",
+    "phone": "5555551234",
+    "street": "789 Pine Road",
+    "city": "Austin",
+    "state": "TX",
+    "zipCode": "73301",
+    "country": "USA"
+  }
+]
