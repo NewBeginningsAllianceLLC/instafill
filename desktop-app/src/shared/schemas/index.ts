@@ -66,7 +66,7 @@ export const FieldMappingSchema = z.object({
   value: z.any(),
   confidence: z.number().min(0).max(1),
   manuallyMapped: z.boolean(),
-  transformer: z.function().args(z.any()).returns(z.string()).optional(),
+  transformer: z.function().optional(),
 });
 
 // Mapping Suggestion Schema
