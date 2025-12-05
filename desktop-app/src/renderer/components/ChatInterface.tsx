@@ -22,6 +22,7 @@ export function ChatInterface() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,11 +31,34 @@ export function ChatInterface() {
   }, [messages]);
 
   useEffect(() => {
+    // Check if electronAPI is available
+    if (!window.electronAPI) {
+      setInitError('Electron API not available. Please restart the app.');
+      return;
+    }
+
     // Initialize Gemini
     geminiService.initialize().catch(() => {
       console.log('Gemini not configured, using basic mode');
     });
   }, []);
+
+  if (initError) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-red-50">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Initialization Error</h1>
+          <p className="text-red-800">{initError}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-6 py-2 bg-red-600 text-white rounded"
+          >
+            Reload App
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const addMessage = (role: 'user' | 'assistant', content: string) => {
     const newMessage: Message = {
