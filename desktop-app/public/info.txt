@@ -1,0 +1,6 @@
+PDF Auto Filler Development Server
+Status: RUNNING
+Port: 5173
+Time: $(date)
+
+If you can read this, the server is accessible!

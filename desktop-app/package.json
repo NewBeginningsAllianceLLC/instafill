@@ -1,0 +1,88 @@
+{
+  "name": "pdf-auto-filler",
+  "version": "1.0.0",
+  "description": "Automated PDF form filling application",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "npm run build:electron && wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .",
+    "build:electron": "webpack --mode=development",
+    "build": "npm run build:electron:prod && vite build && electron-builder",
+    "build:electron:prod": "webpack --mode=production",
+    "build:dir": "npm run build:electron:prod && vite build && electron-builder --dir",
+    "preview": "vite preview",
+    "test": "vitest",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "build": {
+    "appId": "com.pdfautofiller.app",
+    "productName": "PDF Auto Filler",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office"
+    }
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.10.1",
+    "@types/papaparse": "^5.5.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.22",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.5",
+    "electron-builder": "^26.0.12",
+    "eslint": "^9.39.1",
+    "jsdom": "^27.2.0",
+    "postcss": "^8.5.6",
+    "prettier": "^3.7.4",
+    "tailwindcss": "^4.1.17",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6",
+    "vitest": "^4.0.15",
+    "wait-on": "^9.0.3",
+    "webpack": "^5.103.0",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "electron-store": "^11.0.2",
+    "keytar": "^7.9.0",
+    "papaparse": "^5.5.3",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.4.449",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "xlsx": "^0.18.5"
+  }
+}
